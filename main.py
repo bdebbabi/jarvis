@@ -1,71 +1,70 @@
-import os
-import openai
-from dotenv import load_dotenv
-import sounddevice as sd
-from scipy.io.wavfile import write
+import streamlit as st
+from audiorecorder import audiorecorder
+import requests
+import base64
+import json
+from jarvis import *
 
-from elevenlabs import generate, stream
+api_url = "http://127.0.0.1:8000"
+voices = {
+    "Me": "UROuXsTekbnk53kgBUFu",
+    "Batman": "aKFzEXnRwz9b1NbZLVHP",
+    "Macron": "fWHO0uNreUCMvhya5XOj",
+}
 
-load_dotenv()
+# app title
+st.title("Jarvis")
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+# app state
+if "disabled" not in st.session_state:
+    st.session_state.disabled = False
 
-def speech2text():
-    print("Listening")
-    fs = 44100  # Sample rate
-    seconds = 3  # Duration of recording
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
-    sd.wait()  # Wait until recording is finished
-    write('output.wav', fs, myrecording)  # Save as WAV file 
-
-    audio_file= open('output.wav', "rb")
-    transcript = openai.Audio.transcribe("whisper-1", audio_file)["text"]
-    print(transcript)
-    return transcript
-
-def get_answer(messages):
-    print("\nGetting answer")
-    completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "Tu es un assistant un peu fou. Tu as beacoup d'humour. Tes réponses sont généralement courtes, seulement quelques phrases."},
-        *messages
-    ]
+# voices form
+with st.form("app form"):
+    voice = st.selectbox(
+        "Select a voice",
+        voices.keys(),
+        disabled=st.session_state.disabled,
     )
 
-    answer = completion.choices[0].message["content"]
-    print(answer)
-    return answer
-
-
-def text2speech(text, voice="Me"):
-    print("\nReading answer")
-    voices = {
-        "Me":"UROuXsTekbnk53kgBUFu",
-        "Batman":"aKFzEXnRwz9b1NbZLVHP",
-        "Macron": "fWHO0uNreUCMvhya5XOj"
-    }
-    audio = generate(
-        api_key=elevenlabs_api_key,
-        text=text,
-        voice=voices[voice],
-        model='eleven_multilingual_v1',
-        stream=True
+    submitted = st.form_submit_button(
+        "Start",
+        disabled=st.session_state.disabled,
     )
+    if submitted:
+        st.session_state.disabled = True
+        st.experimental_rerun()
 
-    stream(audio)
+if st.session_state.disabled == False:
+    st.stop()
 
-if __name__=="__main__":
-    user_input = 'y'
-    messages = []
-    while user_input == 'y':
-        text = speech2text()
-        messages.append({"role": "user", "content": text})
-        answer = get_answer(messages)
-        messages.append({"role": "assistant", "content": answer})
-        text2speech(answer, "Me")
-        print("\nType [y] to continue: ")
-        user_input = input()
-    
+# get audio prompt
+audio = audiorecorder("🔴 Click to speak", "🟥 Recording... Click to stop")
+with st.spinner("Getting answer..."):
+    if len(audio) > 0:
+        # get text answer
+        files = {"audio": audio.tobytes()}
+        data = {"messages": json.dumps(st.session_state["messages"])}
+        answer = requests.post(f"{api_url}/answer", files=files, data=data).json()
+
+        # print prompt and text answer
+        st.session_state.messages += answer
+        for message in st.session_state.messages:
+            msg = st.chat_message(message["role"])
+            msg.write(message["content"])
+
+        # get audio answer
+        audio = requests.post(
+            f"{api_url}/speak",
+            json={"text": answer[1]["content"], "voice": voices[voice]},
+        ).content
+
+        # play audio answer
+        audio_base64 = base64.b64encode(audio).decode("utf-8")
+        audio_tag = (
+            f'<audio autoplay="true" src="data:audio/wav;base64,{audio_base64}">'
+        )
+        st.markdown(audio_tag, unsafe_allow_html=True)
