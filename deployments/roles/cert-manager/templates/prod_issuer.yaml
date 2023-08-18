@@ -1,0 +1,24 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+ name: letsencrypt-prod
+ namespace: cert-manager
+spec:
+ acme:
+   # The ACME server URL
+   server: https://acme-v02.api.letsencrypt.org/directory
+   # Email address used for ACME registration
+   email: "{{registration_email}}"
+   # Name of a secret used to store the ACME account private key
+   privateKeySecretRef:
+     name: tls-secret
+   # Enable the HTTP-01 challenge provider
+   solvers:
+    - dns01:
+        route53:
+          region: "{{dns.solver_region}}"
+          hostedZoneID: "{{solver_hosted_zone_id}}"
+          role: "{{dns.solver_role}}"
+      selector:
+        dnsZones:
+          - "{{domain_name}}"  

@@ -1,0 +1,17 @@
+- name: Deploy cert-manager
+  import_tasks: install.yaml
+- name: Get route53 hosted zone id
+  shell: aws route53 list-hosted-zones-by-name --dns-name "{{ domain_name }}" --query "HostedZones[].Id" --output text | sed 's/\/hostedzone\///'
+  register: route53_hosted_zone_id
+- name: Create prod issuer
+  vars:
+    solver_hosted_zone_id: "{{route53_hosted_zone_id.stdout}}"
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'prod_issuer.yaml') }}"
+    namespace: cert-manager
+- name: Create prod certificate
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'prod_certificate.yaml') }}"
+    namespace: "{{ app_namespace }}"

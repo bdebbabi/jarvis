@@ -1,0 +1,37 @@
+- name: get route53 hosted zone id
+  shell: aws route53 list-hosted-zones-by-name --dns-name "{{ domain_name }}" --query "HostedZones[].Id" --output text | sed 's/\/hostedzone\///'
+  register: route53_hosted_zone_id
+- name: get NLB external ip
+  shell: kubectl get services --namespace ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+  register: nlb_ip
+- name: print nlb external ip
+  ansible.builtin.debug:
+    msg: "{{ nlb_ip.stdout }}"
+- name: get NLB name
+  shell: echo "{{nlb_ip.stdout}}" | cut -d '-' -f 1 
+  register: nlb_name
+- name: get NLB zone id
+  shell: aws elbv2 describe-load-balancers --name "{{ nlb_name.stdout }}" --query 'LoadBalancers[0].CanonicalHostedZoneId' --output text
+  register: nlb_zone_id
+- name: add route53 record
+  shell: | 
+    aws route53 change-resource-record-sets \
+    --hosted-zone-id "{{route53_hosted_zone_id.stdout}}" \
+    --change-batch '
+      {
+      "Comment": "Created NLB record",
+      "Changes": [
+          { "Action": "CREATE",
+            "ResourceRecordSet": {
+                "Name": "{{domain_name}}",
+                "Type": "A",
+                "AliasTarget": {
+                    "HostedZoneId": "{{ nlb_zone_id.stdout }}",
+                    "DNSName": "{{ nlb_ip.stdout }}",
+                    "EvaluateTargetHealth": true
+                }
+            }
+          }
+      ]
+    }
+    '

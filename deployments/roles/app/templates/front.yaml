@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front-deployment
+  labels:
+    app: front
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: front
+  template:
+    metadata:
+      labels:
+        app: front
+    spec:
+      containers:
+      - name: front
+        image: "{{ecr_docker_registry}}/front:{{frontend_docker_tag}}"
+        ports:
+        - containerPort: 8501
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+            scheme: HTTP
+          timeoutSeconds: 1
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+            scheme: HTTP
+          timeoutSeconds: 1
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "500m"
+          limits:
+            memory: "2000Mi"
+            cpu: "1000m"
+        env:
+          - name: API_URL
+            value: "http://back-service:80"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front-service
+spec:
+  selector:
+    app: front
+  ports:
+    - name: streamlit-port
+      protocol: TCP
+      port: 80
+      targetPort: 8501

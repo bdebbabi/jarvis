@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: back-deployment
+  labels:
+    app: back
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: back
+  template:
+    metadata:
+      labels:
+        app: back
+    spec:
+      containers:
+      - name: back
+        image: "{{ecr_docker_registry}}/back:{{backend_docker_tag}}"
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            port: 80
+            path: /docs
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            port: 80
+            path: /docs
+          initialDelaySeconds: 15
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "500m"
+          limits:
+            memory: "2000Mi"
+            cpu: "1000m"
+        env:
+          - name: OPENAI_API_KEY
+            value: "{{backend.openai_api_key}}"
+          - name: ELEVENLABS_API_KEY
+            value: "{{backend.elevenlabs_api_key}}"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-service
+spec:
+  selector:
+    app: back
+  ports:
+    - name: fastapi-port
+      protocol: TCP
+      port: 80
+      targetPort: 80

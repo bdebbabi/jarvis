@@ -1,4 +1,22 @@
-.env
+# python
+__pycache__
+poetry.lock
+
+# app audio
 *.wav
 *.mp3
-__pycache__
+
+# terraform
+.terraform
+.terraform.lock.hcl
+*.tfstate*
+tf.plan
+
+# config
+.env
+infra/live/backend.conf
+infra/live/project.conf
+**/group_vars/all.yaml
+
+# vscode
+.vscode/settings.json

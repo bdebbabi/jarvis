@@ -1,0 +1,6 @@
+- name: cert manager
+  hosts: localhost
+  tasks:
+    - name: Installs cert manager and creates certificate
+      include_role:
+        name: cert-manager

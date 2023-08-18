@@ -1,0 +1,6 @@
+- name: ingress
+  hosts: localhost
+  tasks:
+    - name: Installs ingress-nginx controller, ingress and adds loads balancer as a dns record
+      include_role:
+        name: ingress-nginx

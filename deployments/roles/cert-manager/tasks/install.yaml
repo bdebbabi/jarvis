@@ -1,0 +1,30 @@
+- name: Deploy cert-manager
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'deploy.yaml') }}"
+- name: Wait for cert-manager to be installed
+  shell: "kubectl get pods -l 'app in (cert-manager, cainjector, webhook)' --field-selector=status.phase==Running --no-headers -n cert-manager | wc -l"
+  register: cert_manager_running_pod
+  retries: 20
+  delay: 2
+  until: cert_manager_running_pod.stdout|int == 3
+  changed_when: false
+- name: Verify installation
+  block:
+    - name: Find out working directory
+      shell: pwd
+      register: wd
+    - name: Install test certificate
+      shell: "kubectl apply -f ../roles/cert-manager/files/test-certificate-deploy.yaml"        
+      args:
+        chdir: "{{ wd.stdout }}"
+      register: result
+      until: result.stdout.find("certificate.cert-manager.io/selfsigned-cert created") != -1
+      retries: 1
+      delay: 15
+      ignore_errors: true
+    - name: Delete test certificate
+      shell: "kubectl delete -f ../roles/cert-manager/files/test-certificate-deploy.yaml"        
+      args:
+        chdir: "{{ wd.stdout }}"
+  

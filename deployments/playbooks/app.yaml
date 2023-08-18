@@ -1,0 +1,6 @@
+- name: app
+  hosts: localhost
+  tasks:
+    - name: Creates app namespace, installs back and front 
+      include_role:
+        name: app

@@ -1,0 +1,15 @@
+- name: Deploy ingress controller
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'deploy.yaml') }}"
+- name: deploy ingress
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yaml') }}"
+    namespace: "{{ app_namespace }}"
+  retries: 5
+  delay: 10
+  register: result
+  until: result.failed == false
+- name: add route53 record
+  import_tasks: nlb-route53-record.yaml

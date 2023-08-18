@@ -1,0 +1,13 @@
+registration_email: # ssl certificate registration email
+domain_name: # website domain name
+app_namespace: # kube namespace where to create the app
+dns:
+  solver_region: # aws dns region
+  solver_role: # cert-manager dns solver aws iam role. can be found in infra/live/04-iam/outputs
+
+backend: 
+  openai_api_key: # https://platform.openai.com/account/api-keys
+  elevenlabs_api_key: # https://docs.elevenlabs.io/api-reference/quick-start/authentication 
+
+ecr_docker_registry: # ecr registry containing the docker images
+

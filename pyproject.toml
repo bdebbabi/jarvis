@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "jarvis"
+version = "0.1.0"
+description = ""
+authors = ["Bilel Debbabi <debbabi.bilel@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.12"
+elevenlabs = "0.2.19"
+openai = "0.27.8"
+python-dotenv = "1.0.0"
+scipy = "1.11.1"
+sounddevice = "0.4.6"
+streamlit = "^1.25.0"
+streamlit-audiorecorder = "^0.0.2"
+fastapi = "^0.101.0"
+uvicorn = {extras = ["standard"], version = "^0.23.2"}
+python-multipart = "^0.0.6"
+black = "^23.7.0"
+
+[tool.poetry.group.ops]  
+
+[tool.poetry.group.ops.dependencies]
+ansible = "^8.3.0"
+kubernetes = "^27.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

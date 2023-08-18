@@ -1,0 +1,18 @@
+services:
+  front:
+    build: 
+      context: .
+      dockerfile: ./ops/front/Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://back:80
+
+  back:
+    build: 
+      context: .
+      dockerfile: ./ops/back/Dockerfile
+    ports:
+      - "80:80"
+    env_file:
+      - .env
