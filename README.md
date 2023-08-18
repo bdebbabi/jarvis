@@ -14,6 +14,7 @@ The app should be availabe at `http://localhost:8501`
 
 ## 🚀 Kubernetes Deployment
 Follow this guide to deploy the app on AWS EKS
+
 **Prerequisites:**
 - AWS CLI
 - Required IAM permissions (vpc, ecr, eks, iam, route53)
